@@ -1,0 +1,73 @@
+<?php
+
+/********************************************************/
+/* Custom colors for categories
+/********************************************************/
+
+class my_plugin_Category_Color {
+    // Set values
+    private $default_color = '#df1f1f';
+    private $first_value = '#eeeeee';
+    private $options_name = 'my_plugin_taxonomy_color';
+    
+    public function __construct() {
+        // Add color picker to categories screen
+        add_action( 'admin_enqueue_scripts', array( $this, 'add_color_picker_to_categories' ) );
+        // Add the form field to add and edit screen
+        add_action('category_add_form_fields', array( $this, 'add_taxonomy_field' ) );
+        add_action('category_edit_form_fields', array( $this, 'edit_taxonomy_field' ) );
+        // Save color 
+        add_action('edit_term', array( $this, 'save_taxonomy_color' ) );
+        add_action('create_term', array( $this, 'save_taxonomy_color' ));
+    }
+    
+    // Add color picker to categories screen
+    public function add_color_picker_to_categories( $hook ){
+        if ( $hook === 'edit-tags.php' )
+        wp_enqueue_style( 'wp-color-picker' );
+        wp_enqueue_script( 'wp-color-picker' );
+    }
+    
+    // Add the form field
+    public function add_taxonomy_field() {
+        echo '<div class="form-field">
+            <label for="taxonomy_color">' . __('Color', 'my-plugin') . '</label>
+            <input type="text" name="taxonomy_color" id="taxonomy_color" value="' . $this->first_value . '" class="wp-color-picker-field" data-default-color="#ffffff" />
+            </div>';
+        echo '<script type="text/javascript"> jQuery(document).ready(function($) { $(".wp-color-picker-field").wpColorPicker(); }); </script>';
+    }
+    
+    // Add the form field
+    function edit_taxonomy_field( $taxonomy ) {
+        echo '<table class="form-table">
+                <tbody>
+                    <tr class="form-field form-required term-name-wrap">
+                    <th scope="row"><label for="name">' . __('Color', 'my-plugin') . '</label></th>
+                    <td><input type="text" name="taxonomy_color" id="taxonomy_color" value="'.$this->taxonomy_color_value( $taxonomy->term_id ).'" class="wp-color-picker-field" data-default-color="#ffffff" />
+                    <p class="description">' . __('Set color for selected category.', 'my-plugin') . '</p></td>
+                    </tr>
+                </tbody>
+            </table>';
+        echo '<script type="text/javascript"> jQuery(document).ready(function($) { $(".wp-color-picker-field").wpColorPicker(); }); </script>';
+    }
+    
+    // Save color
+    function save_taxonomy_color( $term_id ) {
+        if( isset( $_POST['taxonomy_color'] ) )
+            update_option( $this->options_name.$term_id, $_POST['taxonomy_color'] );
+    }
+    
+    // Return category color
+    function taxonomy_color_value( $term_id ) {
+        $taxonomy_color_value = get_option( $this->options_name.$term_id );
+        
+        // If color not set return default color
+        if ( empty( $taxonomy_color_value ) ) {
+            $taxonomy_color_value = $this->default_color;
+        }
+        
+        return $taxonomy_color_value;
+    }
+    
+}
+new my_plugin_Category_Color();
